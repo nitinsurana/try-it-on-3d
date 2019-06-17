@@ -1,5 +1,5 @@
 // Set constraints for the video stream
-var constraints = { video: { facingMode: "user" }, audio: false };
+var constraints = {video: {facingMode: "user"}, audio: false};
 var track = null;
 
 // Define constants
@@ -12,22 +12,35 @@ const cameraView = document.querySelector("#camera--view"),
 function cameraStart() {
     navigator.mediaDevices
         .getUserMedia(constraints)
-        .then(function(stream) {
+        .then(function (stream) {
             track = stream.getTracks()[0];
             cameraView.srcObject = stream;
         })
-        .catch(function(error) {
+        .catch(function (error) {
             console.error("Oops. Something is broken.", error);
         });
 }
 
 // Take a picture when cameraTrigger is tapped
-cameraTrigger.onclick = function() {
+cameraTrigger.onclick = function () {
     cameraSensor.width = cameraView.videoWidth;
     cameraSensor.height = cameraView.videoHeight;
     cameraSensor.getContext("2d").drawImage(cameraView, 0, 0);
-    cameraOutput.src = cameraSensor.toDataURL("image/webp");
+    const base64 = cameraOutput.src = cameraSensor.toDataURL("image/webp");
     cameraOutput.classList.add("taken");
+    fetch('//localhost:3000/upload64',
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                data: base64
+            }),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(console.log)
+        .catch(console.error);
     // track.stop();
 };
 
@@ -37,13 +50,13 @@ window.addEventListener("load", cameraStart, false);
 
 // Install ServiceWorker
 if ('serviceWorker' in navigator) {
-  console.log('CLIENT: service worker registration in progress.');
-  navigator.serviceWorker.register( '/camera-app/part-2/sw.js' , { scope : ' ' } ).then(function() {
-    console.log('CLIENT: service worker registration complete.');
-  }, function() {
-    console.log('CLIENT: service worker registration failure.');
-  });
+    console.log('CLIENT: service worker registration in progress.');
+    navigator.serviceWorker.register('/camera-app/client/sw.js', {scope: ' '}).then(function () {
+        console.log('CLIENT: service worker registration complete.');
+    }, function () {
+        console.log('CLIENT: service worker registration failure.');
+    });
 } else {
-  console.log('CLIENT: service worker is not supported.');
+    console.log('CLIENT: service worker is not supported.');
 }
 
