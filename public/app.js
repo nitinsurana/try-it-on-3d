@@ -23,25 +23,40 @@ function cameraStart() {
 
 // Take a picture when cameraTrigger is tapped
 cameraTrigger.onclick = function () {
-    cameraSensor.width = cameraView.videoWidth;
-    cameraSensor.height = cameraView.videoHeight;
-    cameraSensor.getContext("2d").drawImage(cameraView, 0, 0);
-    const base64 = cameraOutput.src = cameraSensor.toDataURL("image/webp");
-    cameraOutput.classList.add("taken");
-    fetch('//localhost:3000/upload64',
-        {
-            method: 'POST',
-            body: JSON.stringify({
-                data: base64
-            }),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(console.log)
-        .catch(console.error);
-    // track.stop();
+    if (this.timer) {
+        clearInterval(this.timer);
+        this.innerHTML = 'Record Video';
+        this.timer = null;
+        this.className = '';
+        return;
+    }
+
+    this.innerHTML = 'Stop Recording';
+    this.className = 'recording';
+    this.timer = setInterval(function () {
+        cameraSensor.width = cameraView.videoWidth;
+        cameraSensor.height = cameraView.videoHeight;
+        cameraSensor.getContext("2d").drawImage(cameraView, 0, 0);
+        // const base64 = cameraOutput.src = cameraSensor.toDataURL("image/png");
+        const base64 = cameraSensor.toDataURL("image/png");
+        if (!base64) {
+            return;
+        }
+        // cameraOutput.classList.add("taken");
+        fetch('/upload64',
+            {
+                method: 'POST',
+                body: JSON.stringify({
+                    data: base64
+                }),
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(console.log)
+            .catch(console.error);
+    }, 50);      //roughly 20 fps
 };
 
 // Start the video stream when the window loads
